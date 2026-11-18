@@ -1,64 +1,60 @@
-# StockFlow — خطة البورتفيليو
+# StockFlow portfolio roadmap
 
-مرجع التقييم الأساسي: 17 نوفمبر 2026. تحديث نشر الخطة داخل المستودع: 18 نوفمبر 2026.
+Baseline reviewed on November 17, 2026. Repository roadmap published on November 18, 2026.
 
-الخطة خاصة بهذا المستودع، ومستخلصة من خطة Null Catchers المشتركة. وصف «الموجود الموثق» يعكس المراجعة بتاريخها؛ تحقّق من الكود ووثائق الحالة الحالية قبل إنشاء مهمة جديدة. لا تعِد تنفيذ ميزة موجودة، ولا تعتبر وجود تعريف CI دليلًا على نجاح تشغيله.
+This roadmap applies to this repository and follows the shared Null Catchers portfolio plan. Verify the documented state against the current code and runs before starting work.
 
-**تقدير شريحة العرض الأولى:** 70–120 ساعة بعد تحديد النطاق. التقدير تخطيطي لمطور يعرف المشروع، ويستثني انتظار حسابات المتاجر والمراجعات الخارجية وتجهيز بيئة الهدف. لا يغطي جميع بنود P2.
+**Estimated initial demo effort** 70–120 hours after approval of the scope for a developer familiar with the project. The estimate excludes external reviews, store accounts, target environment setup, and later milestones.
 
-## الأولويات الخاصة بالمشروع
+## Project priorities
 
-**الموجود المتحقق:** المستودع يحتوي README وخطة البورتفيليو. تفاصيل المنتج أدناه اقتراح تخطيطي ينتظر اعتماد النطاق قبل بدء البرمجة.
+**Documented state** The repository has a README and portfolio plan. The proposed product scope requires approval before implementation.
 
-**P0 — قرار وبنية MVP** راجع مسودة المتطلبات أدناه واعتمد النطاق والتقنية قبل تنفيذ أول مسار لتسجيل الحركات.
+**P0 — Demo** Review the requirements below and approve the scope and stack before building the first inventory movement flow.
 
-**P1 — النسخة الأولى:** سجل stock ledger غير قابل للتعديل المباشر؛ التصحيح بحركة عكسية. احسب الرصيد من الحركات أو projection يمكن مطابقته، وأضف idempotency/transactional concurrency حتى لا يصرف مستخدمان الرصيد نفسه. نفذ شاشة الرصيد والحركة وتقرير CSV وseed اصطناعيًا.
+**P1 — Validation and depth** Use an append-only stock ledger and reversing movements for correction. Derive balances from the ledger or a reconciled projection. Use transactional concurrency and idempotency for issues. Build balance and movement screens, CSV export, and synthetic data.
 
-**P2 — لاحقًا:** barcode ثم عدة مخازن أو أوامر شراء بعد إثبات ledger. المحاسبة والفواتير والضرائب ليست ضمن MVP المقترح.
+**P2 — Later** Consider barcode, multiple stores, or purchase orders after validating the ledger. Accounting, invoicing, and taxes are outside the proposed MVP.
 
-**معيار الإنجاز:** initial + receipts − issues يطابق الرصيد، retries لا تضاعف الحركة، الصرف المتزامن يحترم السياسة، rollback لا يترك حركة جزئية، وتشغيل نظيف موثق مع CI.
+**Acceptance criteria** Opening balance plus receipts minus issues reconciles. Retry produces one movement, concurrency preserves the balance policy, and rollback leaves no partial entry.
 
-**الديمو:** استلام 10 قطع → صرف 7 → محاولة صرف متزامنة → تنبيه حد أدنى → جرد وتصحيح معلل. **الأدلة:** [README](README.md).
+**Demo scenario** Receive 10 units → issue 7 → attempt concurrent issues → see the low-stock alert → count and correct inventory. [README](README.md).
 
-## الدفعة التالية
+## Next milestones
 
-### مسودة متطلبات المنتج
+### Draft product requirements
 
-**الاستخدام المقترح**
+A stock clerk at a single store needs to see how much is on hand and why it changed. Start with one warehouse and whole units per item. Defer inter-warehouse transfers.
 
-أمين مخزن لمتجر واحد يحتاج معرفة رصيد كل صنف ومعرفة سبب تغيّره. تبدأ الشريحة بمخزن واحد ووحدة صحيحة لكل صنف. تنقلات المخازن جزء من توسع لاحق.
-
-| القرار المقترح | معيار القبول |
+| Proposed decision | Acceptance criteria |
 |---|---|
-| موظف يسجل الاستلام والصرف ويقرأ الرصيد، ومشرف يسجل التصحيح | يظهر معرف المنفذ والوقت والسبب لكل تصحيح. يرفض النظام محاولة التصحيح من دور الموظف. |
-| الرصيد يحسب من سجل حركات، والتصحيح بحركة عكسية | يحافظ الاستعلام على الحركة الأصلية ويبيّن التصحيح في كشف الحركات. |
-| الصرف الذي يجعل الرصيد سالبًا يُرفض | عند رصيد 3 ومحاولتين متزامنتين لصرف 2 لكل منهما، تنجح واحدة ويستقر الرصيد على 1. |
-| مفتاح إعادة محاولة لكل طلب تسجيل | لا تضيف إعادة الطلب نفسه حركة. يُرفض استخدام المفتاح نفسه مع كمية مختلفة. |
-| حد تنبيه وحصر حركة صنف | استلام 10 ثم صرف 7 يعطي 3 ويظهر التنبيه عند الحد 3. يتطابق كشف الرصيد مع مجموع الحركات. |
+| A clerk receives and issues stock. A supervisor corrects stock. | Corrections record who, when, and why. A clerk cannot submit one. |
+| Use a stock ledger and reversing movements. | Keep the original movement, and show the reversal in the movement list. |
+| Reject issues that would make a balance negative. | With a balance of 3 and two concurrent issues of 2, one succeeds and the balance is 1. |
+| Require an idempotency key for submissions. | A replay adds no movement. Reusing the key with a different quantity is rejected. |
+| Support low-stock thresholds and item history. | Receive 10 and issue 7 to reach 3 and trigger a threshold of 3. The balance matches the movement totals. |
 
-**التقنية المقترحة**
+Use a web application and PostgreSQL, with one transaction to record a movement and protect the balance. Choose the application framework after reviewing team experience. The first slice covers item setup, receiving, issuing, and current balance. Defer external alerts and barcode integration until the synthetic walkthrough passes.
 
-تطبيق ويب وPostgreSQL، مع معاملة واحدة لتسجيل الحركة وحماية الرصيد. يُختار إطار التطبيق بعد مراجعة خبرة الفريق. نطاق التنفيذ الأول يشمل تعريف الصنف وتسجيل الاستلام والصرف وعرض الرصيد. قرار التنبيهات الخارجية والباركود يأتي بعد إثبات المسار على بيانات اصطناعية.
+## Portfolio acceptance checklist
 
-## بوابة قبول نسخة البورتفيليو
+- [ ] Another person can reproduce the primary workflow from a clean checkout using the README and test credentials or fixtures.
+- [ ] The demo tells one complete story with a defined user, problem, and saved result.
+- [ ] Tests cover the main flow, an important failure, and access boundaries when multiple accounts are involved.
+- [ ] Demo data is labeled synthetic and reproducible. Review screenshots and recordings for secrets and customer data.
+- [ ] Include four to six real screenshots where appropriate, a 60–120 second recording, and working links. Identify the revision used for capture.
+- [ ] The README describes implemented capabilities, setup, architecture, limits, tests, and the demo.
+- [ ] A short case study explains two engineering decisions, a considered alternative, and how the system handles an actual failure.
+- [ ] Release evidence records the commit SHA, CI, prerequisites, and limits. Performance data includes workload, hardware, and method.
+- [ ] Licensing and contributor attribution are settled before distribution. Choose the license for each repository individually.
 
-- [ ] يستطيع شخص آخر تشغيل المسار الرئيسي من checkout نظيف، باتباع README، دون أسرار شخصية.
-- [ ] توجد قصة واحدة مكتملة: مستخدم محدد، مشكلة محددة، ومسار بداية إلى نتيجة محفوظة.
-- [ ] ينجح اختبار للمسار الرئيسي وحالة فشل مهمة، وتُختبر حدود الصلاحيات حيث توجد حسابات متعددة.
-- [ ] توجد بيانات عرض اصطناعية معلنة، قابلة لإعادة الإنشاء؛ ولا توجد بيانات عملاء أو أسرار في اللقطات.
-- [ ] توجد 4–6 لقطات حقيقية أو العدد الملائم للأداة، وفيديو 60–120 ثانية، وروابط تعمل. تُلتقط الأدلة من إصدار معروف.
-- [ ] README يوضح المزايا الفعلية، طريقة التشغيل، الرسم المعماري، القيود، وروابط الاختبارات والديمو.
-- [ ] Case study قصيرة تشرح قرارين هندسيين، بديلًا جرى استبعاده ولماذا، وفشلًا حقيقيًا وكيف يعالجه النظام.
-- [ ] صفحة Release تسجل SHA وCI والمتطلبات والقيود. لا تُنشر أرقام أداء دون workload وعتاد وطريقة قياس.
-- [ ] حُسمت سياسة الترخيص ونسب المساهمات قبل التوزيع؛ لا نختار ترخيصًا تلقائيًا لجميع المستودعات.
+A hosted demo is optional. Code execution, server administration, and secret management can be demonstrated through a recording and a reproducible isolated environment. Keep public demo access scoped to the activities it needs.
 
-الديمو المستضاف مفيد وليس شرطًا لكل أداة. أدوات تنفيذ الكود وإدارة الخوادم والأسرار يمكن عرضها بفيديو وبيئة معزولة وتجربة محلية قابلة للإعادة. لا تفتح تنفيذًا عامًا غير محدود لمجرد وجود رابط بورتفيليو.
+## Implementation and follow-up
 
-## التنفيذ والمتابعة
-
-- حوّل P0 إلى مهام صغيرة، لكل منها سلوك متوقع ومعيار قبول واختبار مناسب.
-- ابدأ بتأكيد الموجود؛ عدّل هذه الخطة عندما يغلق بند بدليل مرتبط بcommit أو PR.
-- سجّل مصدر بيانات الديمو، والـSHA الذي التُقطت منه الأدلة، وحدود التجربة الفعلية.
-- راجع الفرق النهائي وانتظر نجاح الفحوص المطلوبة لنفس SHA قبل الدمج، مع احترام حماية الفرع.
-- إذا كان التعديل وثائق فقط ولا يوجد فحص ينطبق عليه، سجّل التحقق من محتواها وروابطها؛ لا تسجل اختبارات تشغيل لم تُنفّذ.
-- لا تُنشر أرقام أداء أو ادعاءات أمان أو جاهزية إنتاج بلا دليل مناسب.
+- Break P0 into tasks with expected behavior, acceptance criteria, and a suitable test.
+- Verify existing functionality first. Update this plan when evidence tied to a commit or PR closes a milestone.
+- Record the fixture source, the revision used for evidence, and the tested limits.
+- Review the final diff and verify required checks for its exact SHA before merging. Follow branch protection.
+- For documentation-only changes with no applicable workflow, verify content and links and record the checks actually performed.
+- Tie performance, security, and readiness claims to supporting evidence.
